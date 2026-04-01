@@ -4,7 +4,7 @@ import {
 } from '@/lib/providers/official/model-registry'
 import { getProviderConfig } from '@/lib/api-config'
 import type { GenerateResult } from '@/lib/generators/base'
-import { toFetchableUrl } from '@/lib/storage/utils'
+import { normalizeToBase64ForGeneration } from '@/lib/media/outbound-image'
 import { ensureBailianCatalogRegistered } from './catalog'
 import type { BailianGenerateRequestOptions } from './types'
 
@@ -96,10 +96,10 @@ function assertNoUnsupportedOptions(options: BailianGenerateRequestOptions): voi
   }
 }
 
-function buildSubmitRequest(params: BailianVideoGenerateParams): {
+async function buildSubmitRequest(params: BailianVideoGenerateParams): Promise<{
   endpoint: string
   body: BailianVideoSubmitBody
-} {
+}> {
   const imageUrl = readTrimmedString(params.imageUrl)
   if (!imageUrl) {
     throw new Error('BAILIAN_VIDEO_IMAGE_URL_REQUIRED')
@@ -109,7 +109,7 @@ function buildSubmitRequest(params: BailianVideoGenerateParams): {
     throw new Error('BAILIAN_VIDEO_MODEL_ID_REQUIRED')
   }
 
-  const firstFrameUrl = toFetchableUrl(imageUrl)
+  const firstFrameUrl = await normalizeToBase64ForGeneration(imageUrl)
   const kf2v = isKf2vModel(modelId)
   const lastFrameImageUrl = readTrimmedString(params.options.lastFrameImageUrl)
   if (kf2v && !lastFrameImageUrl) {
@@ -131,7 +131,7 @@ function buildSubmitRequest(params: BailianVideoGenerateParams): {
     input: kf2v
       ? {
         first_frame_url: firstFrameUrl,
-        last_frame_url: toFetchableUrl(lastFrameImageUrl),
+        last_frame_url: await normalizeToBase64ForGeneration(lastFrameImageUrl!),
       }
       : {
         img_url: firstFrameUrl,
@@ -186,7 +186,7 @@ export async function generateBailianVideo(params: BailianVideoGenerateParams): 
   assertNoUnsupportedOptions(params.options)
 
   const { apiKey } = await getProviderConfig(params.userId, params.options.provider)
-  const submitRequest = buildSubmitRequest(params)
+  const submitRequest = await buildSubmitRequest(params)
   const response = await fetch(submitRequest.endpoint, {
     method: 'POST',
     headers: {

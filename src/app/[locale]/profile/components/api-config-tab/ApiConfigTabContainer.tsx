@@ -101,6 +101,7 @@ export function ApiConfigTabContainer() {
     saveStatus,
     flushConfig,
     updateProviderHidden,
+    updateProviderImageChatMode,
     updateProviderApiKey,
     updateProviderBaseUrl,
     reorderProviders,
@@ -285,6 +286,7 @@ export function ApiConfigTabContainer() {
             onToggleModel={toggleModel}
             onUpdateApiKey={updateProviderApiKey}
             onUpdateBaseUrl={updateProviderBaseUrl}
+            onUpdateImageChatMode={updateProviderImageChatMode}
             onReorderProviders={reorderProviders}
             onDeleteModel={deleteModel}
             onUpdateModel={updateModel}

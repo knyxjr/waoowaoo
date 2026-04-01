@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-geist-sans: Arial, Helvetica, sans-serif;
+  --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 
   /* 设计系统 - 颜色 */
   --bg-primary: var(--glass-bg-canvas);

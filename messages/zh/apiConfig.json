@@ -99,6 +99,7 @@
   "addGeminiProvider": "新增模型服务商",
   "baseUrl": "Base URL",
   "configureBaseUrl": "配置地址",
+  "imageChatMode": "使用对话通道出图（解决原生接口失败的问题）",
   "addModel": "添加模型",
   "batchModeHalfPrice": "批量模式（价格减半）",
   "openaiCompatVideoOnlyHint": "仅支持 OpenAI 官方格式的图生视频模型。",

@@ -1,0 +1,1 @@
+import { prisma } from './src/lib/prisma'; async function test() { const task = await prisma.task.findFirst({ where: { status: 'failed' }, orderBy: { createdAt: 'desc' }, select: { id: true, errorDetails: true, errorMessage: true } }); console.log(JSON.stringify(task, null, 2)); process.exit(0); } test();

@@ -52,6 +52,7 @@ interface UseProvidersReturn {
     saveStatus: 'idle' | 'saving' | 'saved' | 'error'
     flushConfig: () => Promise<void>
     updateProviderHidden: (providerId: string, hidden: boolean) => void
+    updateProviderImageChatMode: (providerId: string, imageChatMode: boolean) => void
     updateProviderApiKey: (providerId: string, apiKey: string) => void
     updateProviderBaseUrl: (providerId: string, baseUrl: string) => void
     reorderProviders: (activeProviderId: string, overProviderId: string) => void
@@ -96,6 +97,7 @@ export function mergeProvidersForDisplay(
                 baseUrl: providerBaseUrl,
                 apiMode: savedProvider.apiMode,
                 gatewayRoute: savedProvider.gatewayRoute,
+                imageChatMode: savedProvider.imageChatMode === true,
             })
             seenPresetKeys.add(providerKey)
             continue
@@ -579,6 +581,17 @@ export function useProviders(): UseProvidersReturn {
         })
     }, [performSave])
 
+    const updateProviderImageChatMode = useCallback((providerId: string, imageChatMode: boolean) => {
+        setProviders((previous) => {
+            const next = previous.map((provider) =>
+                provider.id === providerId ? { ...provider, imageChatMode } : provider,
+            )
+            latestProvidersRef.current = next
+            void performSave(undefined, true)
+            return next
+        })
+    }, [performSave])
+
     const addProvider = useCallback((provider: Omit<Provider, 'hasApiKey'>) => {
         setProviders(prev => {
             const normalizedProviderId = provider.id.toLowerCase()
@@ -775,6 +788,7 @@ export function useProviders(): UseProvidersReturn {
         saveStatus,
         flushConfig,
         updateProviderHidden,
+        updateProviderImageChatMode,
         updateProviderApiKey,
         updateProviderBaseUrl,
         reorderProviders,

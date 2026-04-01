@@ -21,6 +21,7 @@ import {
 import { usePanelImageRegeneration } from './usePanelImageRegeneration'
 import { usePanelImageModification } from './usePanelImageModification'
 import { usePanelImageDownload } from './usePanelImageDownload'
+import { usePanelImageUpload } from './usePanelImageUpload'
 
 export interface SelectedAsset {
   id: string
@@ -145,6 +146,30 @@ export function useStoryboardImageGeneration({
     setIsDownloadingImages,
   })
 
+  const { triggerUpload: uploadPanelImage } = usePanelImageUpload({
+    projectId,
+    episodeId,
+    onUploaded: (panelId, uploadedImageUrl) => {
+      setLocalStoryboards((previousStoryboards) =>
+        previousStoryboards.map((storyboard) => {
+          const panels = getStoryboardPanels(storyboard)
+          let changed = false
+          const updatedPanels = panels.map((panel) => {
+            if (panel.id !== panelId) return panel
+            changed = true
+            return {
+              ...panel,
+              imageUrl: uploadedImageUrl,
+              candidateImages: null,
+              imageTaskRunning: false,
+            }
+          })
+          return changed ? { ...storyboard, panels: updatedPanels } : storyboard
+        }),
+      )
+    },
+  })
+
   const clearStoryboardError = useCallback(async (storyboardId: string) => {
     let snapshot: NovelPromotionStoryboard[] | null = null
     setLocalStoryboards((previousStoryboards) =>
@@ -198,5 +223,6 @@ export function useStoryboardImageGeneration({
     modifyPanelImage,
     downloadAllImages,
     clearStoryboardError,
+    uploadPanelImage,
   }
 }

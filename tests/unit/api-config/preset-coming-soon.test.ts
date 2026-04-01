@@ -15,18 +15,18 @@ describe('api-config preset coming soon', () => {
     expect(model?.name).toBe('Nano Banana 2')
   })
 
-  it('registers Seedance 2.0 as a coming-soon preset model', () => {
+  it('registers Seedance 2.0 as a normal preset model (no longer coming-soon)', () => {
     const model = PRESET_MODELS.find(
       (entry) => entry.provider === 'ark' && entry.modelId === 'doubao-seedance-2-0-260128',
     )
     expect(model).toBeDefined()
-    expect(model?.name).toContain('待上线')
+    expect(model?.name).toBe('Seedance 2.0')
   })
 
-  it('recognizes coming-soon model by provider/modelId and modelKey', () => {
+  it('does not mark Seedance 2.0 as coming soon', () => {
     const modelKey = encodeModelKey('ark', 'doubao-seedance-2-0-260128')
-    expect(isPresetComingSoonModel('ark', 'doubao-seedance-2-0-260128')).toBe(true)
-    expect(isPresetComingSoonModelKey(modelKey)).toBe(true)
+    expect(isPresetComingSoonModel('ark', 'doubao-seedance-2-0-260128')).toBe(false)
+    expect(isPresetComingSoonModelKey(modelKey)).toBe(false)
   })
 
   it('does not mark normal preset models as coming soon', () => {

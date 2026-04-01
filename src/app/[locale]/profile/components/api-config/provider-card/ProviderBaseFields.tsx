@@ -280,6 +280,24 @@ export function ProviderBaseFields({ provider, t, state }: ProviderBaseFieldsPro
           </div>
         </div>
       )}
+
+      {(state.providerKey === 'openai-compatible' || state.providerKey === 'gemini-compatible') && (
+        <div className="px-3.5 pb-2.5 pt-0">
+          <div className="glass-surface-soft flex items-center justify-between gap-2.5 rounded-xl px-3 py-2">
+            <span className="w-auto shrink-0 whitespace-nowrap text-[12px] font-semibold text-[var(--glass-text-tertiary)]">
+              {t('imageChatMode') || 'Chat Mode for Images'}
+            </span>
+            <button
+              onClick={() => state.handleUpdateImageChatMode(!provider.imageChatMode)}
+              className={`glass-toggle ${provider.imageChatMode ? 'glass-toggle-active' : ''}`}
+              data-active={provider.imageChatMode ?? false}
+              title={t('imageChatMode')}
+            >
+              <div className="glass-toggle-thumb"></div>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }

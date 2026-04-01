@@ -1,0 +1,105 @@
+{
+  "title": "Seedance Studio",
+  "subtitle": "Seedance 2.0 Video Generation Workspace",
+  "model": {
+    "label": "Model",
+    "seedance2": "Seedance 2.0",
+    "seedance2Fast": "Seedance 2.0 Fast"
+  },
+  "mode": {
+    "label": "Generation Mode",
+    "textToVideo": "Text to Video",
+    "textToVideoDesc": "Generate video from text description",
+    "imageToVideo": "Image to Video",
+    "imageToVideoDesc": "First/last frame driven generation",
+    "multiRef": "Multi-modal Reference",
+    "multiRefDesc": "Image/video/audio reference + text",
+    "videoEdit": "Video Edit",
+    "videoEditDesc": "Reference video + reference image + edit instruction",
+    "videoExtend": "Video Extend",
+    "videoExtendDesc": "Continue generating from existing video"
+  },
+  "prompt": {
+    "label": "Prompt",
+    "placeholder": "Describe the video you want to generate...",
+    "editPlaceholder": "Describe the edits you want to make...",
+    "extendPlaceholder": "Describe the continuation direction (optional)..."
+  },
+  "reference": {
+    "title": "Multi-modal Reference",
+    "images": "Reference Images",
+    "imagesHint": "Up to 9",
+    "videos": "Reference Videos",
+    "videosHint": "Up to 3",
+    "audios": "Reference Audio",
+    "audiosHint": "Up to 3",
+    "dropOrClick": "Drop or click to upload",
+    "remove": "Remove"
+  },
+  "firstLastFrame": {
+    "title": "First/Last Frame",
+    "firstFrame": "First Frame",
+    "lastFrame": "Last Frame (optional)",
+    "hint": "Upload a first frame image, the model will generate video starting from this frame"
+  },
+  "videoEdit": {
+    "refVideo": "Reference Video",
+    "refVideoHint": "The original video to edit",
+    "refImage": "Reference Image",
+    "refImageHint": "Edit target reference (optional)"
+  },
+  "videoExtend": {
+    "refVideos": "Reference Videos",
+    "refVideosHint": "Videos to extend (up to 3)"
+  },
+  "params": {
+    "title": "Video Parameters",
+    "resolution": "Resolution",
+    "ratio": "Aspect Ratio",
+    "ratioAdaptive": "Adaptive",
+    "duration": "Duration (sec)",
+    "durationAuto": "Auto",
+    "generateAudio": "Generate Audio",
+    "webSearch": "Web Search Enhancement",
+    "seed": "Seed",
+    "seedPlaceholder": "Leave empty for random"
+  },
+  "generate": {
+    "submit": "Generate Video",
+    "submitting": "Submitting...",
+    "count": "videos",
+    "submitBatch": "Generate {count} Videos",
+    "noPromptOrMedia": "Please enter a prompt or upload reference media"
+  },
+  "task": {
+    "title": "Tasks",
+    "empty": "No tasks yet. Configure parameters on the left and click Generate.",
+    "total": "{count} tasks",
+    "running": "Running {count}",
+    "completed": "Completed {count}",
+    "failed": "Failed {count}",
+    "downloadAll": "Download All",
+    "downloading": "Packaging...",
+    "downloadProgress": "Downloading {current}/{total}",
+    "noVideos": "No videos to download",
+    "status": {
+      "submitting": "Submitting",
+      "processing": "Processing",
+      "succeeded": "Completed",
+      "failed": "Failed"
+    },
+    "retry": "Retry",
+    "retryAll": "Retry All",
+    "download": "Download",
+    "remove": "Remove"
+  },
+  "upload": {
+    "failed": "Upload failed: {error}",
+    "tooLarge": "File too large, max {max}MB",
+    "invalidType": "Unsupported file type"
+  },
+  "error": {
+    "generateFailed": "Generation failed: {error}",
+    "queryFailed": "Failed to query task status"
+  }
+}

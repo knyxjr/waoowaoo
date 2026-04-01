@@ -5,6 +5,7 @@ import {
   readStringOption,
   resolveOpenAICompatClientConfig,
   toUploadFile,
+  toInlineData,
 } from './common'
 
 type OpenAIImageResponseFormat = 'url' | 'b64_json'
@@ -150,16 +151,88 @@ export async function generateImageViaOpenAICompat(request: OpenAICompatImageReq
   const rawSize = resolveRawSize(options)
   const size = normalizeOpenAIImageSize(rawSize)
 
-  if (referenceImages.length > 0) {
-    const response = await client.images.edit({
+  const forceChatMode = config.imageChatMode === true || process.env.WAOOWAOO_IMAGE_FORCE_CHAT_API === 'true'
+
+  if (forceChatMode) {
+    // ==========================================================
+    // 强制 Fallback：直接使用 OpenAI /v1/chat/completions 进行“聊天画图”
+    // ==========================================================
+    const chatBaseUrl = config.baseUrl || 'https://api.openai.com/v1'
+    const chatApiKey = config.apiKey || ''
+    const chatPath = chatBaseUrl.replace(/\/+$/, '') + '/chat/completions'
+
+    console.log(`[OPENAI_CHAT_MODE] 强制请求 Chat 聊天端点出图: ${chatPath}`)
+    const chatContents: any[] = [{ type: 'text', text: prompt }]
+
+    for (const referenceImage of referenceImages.slice(0, 4)) {
+      if (typeof referenceImage === 'string') {
+        const inlineData = await toInlineData(referenceImage)
+        if (inlineData) {
+          chatContents.push({
+            type: 'image_url',
+            image_url: { url: `data:${inlineData.mimeType};base64,${inlineData.data}` }
+          })
+        }
+      }
+    }
+
+    const chatBody = {
       model: normalizedModelId,
-      prompt,
-      image: await Promise.all(referenceImages.map((image, index) => toUploadFile(image, index))),
-      response_format: responseFormat,
-      ...(outputFormat ? { output_format: outputFormat } : {}),
-      ...(quality ? { quality } : {}),
-      ...(size ? { size } : {}),
-    } as unknown as Parameters<typeof client.images.edit>[0])
+      messages: [{ role: 'user', content: chatContents }],
+    }
+
+    const cRes = await fetch(chatPath, {
+      method: 'POST',
+      headers: {
+         'Content-Type': 'application/json',
+         'Authorization': `Bearer ${chatApiKey}`,
+      },
+      body: JSON.stringify(chatBody),
+    })
+
+    const chatText = await cRes.text()
+    
+    // 暴力正则：找 base64
+    const base64Match = chatText.match(/"(?:data:image\/[^;]+;base64,)?([A-Za-z0-9+/]{1000,}={0,2})"/);
+    if (base64Match && base64Match[1]) {
+      console.log(`[OPENAI_CHAT_MODE] ✅ 成功获取到 Base64!`)
+      return { success: true, imageBase64: base64Match[1], imageUrl: `data:image/png;base64,${base64Match[1]}` }
+    }
+
+    // 暴力正则：找 http 链接 
+    const urlMatch = chatText.match(/(https?:\/\/[^\s"'\\]+\.(?:png|jpg|jpeg|webp|gif)[^\s"'\\]*)/i) || 
+                     chatText.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
+    if (urlMatch && urlMatch[1]) {
+      console.log(`[OPENAI_CHAT_MODE] ✅ 成功获取到 URL: ${urlMatch[1]}`)
+      return { success: true, imageUrl: urlMatch[1] }
+    }
+
+    if (!cRes.ok) {
+       // 注入特定关键字 fieldinvalid (被 normalizeAnyError 归为 INVALID_PARAMS，默认禁用重试)
+       throw new Error(`[fieldinvalid] OPENAI_COMPATIBLE_CHAT_MODE_FAILED: HTTP ${cRes.status}: ${chatText.slice(0, 250)}`)
+    }
+    throw new Error(`[fieldinvalid] OPENAI_COMPATIBLE_IMAGE_EMPTY_RESPONSE: 已尝试使用 Chat 模式出图，但未发现图片信息: ${chatText.slice(0, 300)}`)
+  }
+
+  // ==========================================================
+  // 未开启开关：常规请求。没有任何兜底捕获，失败就报错
+  // ==========================================================
+  if (referenceImages.length > 0) {
+    let response;
+    try {
+      response = await client.images.edit({
+        model: normalizedModelId,
+        prompt,
+        image: await Promise.all(referenceImages.map((image, index) => toUploadFile(image, index))),
+        response_format: responseFormat,
+        ...(outputFormat ? { output_format: outputFormat } : {}),
+        ...(quality ? { quality } : {}),
+        ...(size ? { size } : {}),
+      } as unknown as Parameters<typeof client.images.edit>[0])
+    } catch (err: unknown) {
+      const ms = err instanceof Error ? err.message : String(err)
+      throw new Error(`[fieldinvalid] OPENAI_COMPAT_IMAGE_EDIT_FAILED: ${ms}`)
+    }
 
     const imagePayload = readFirstImagePayload(response)
     const imageBase64 = imagePayload.b64Json
@@ -175,17 +248,23 @@ export async function generateImageViaOpenAICompat(request: OpenAICompatImageReq
     if (typeof imageUrl === 'string' && imageUrl.trim().length > 0) {
       return { success: true, imageUrl }
     }
-    throw new Error('OPENAI_COMPAT_IMAGE_EMPTY_RESPONSE: no image data returned')
+    throw new Error('[fieldinvalid] OPENAI_COMPAT_IMAGE_EMPTY_RESPONSE: no image data returned')
   }
 
-  const response = await client.images.generate({
-    model: normalizedModelId,
-    prompt,
-    response_format: responseFormat,
-    ...(outputFormat ? { output_format: outputFormat } : {}),
-    ...(quality ? { quality } : {}),
-    ...(size ? { size } : {}),
-  } as unknown as Parameters<typeof client.images.generate>[0])
+  let response;
+  try {
+     response = await client.images.generate({
+       model: normalizedModelId,
+       prompt,
+       response_format: responseFormat,
+       ...(outputFormat ? { output_format: outputFormat } : {}),
+       ...(quality ? { quality } : {}),
+       ...(size ? { size } : {}),
+     } as unknown as Parameters<typeof client.images.generate>[0])
+  } catch (err: unknown) {
+      const ms = err instanceof Error ? err.message : String(err)
+      throw new Error(`[fieldinvalid] OPENAI_COMPAT_IMAGE_GENERATE_FAILED: ${ms}`)
+  }
 
   const imagePayload = readFirstImagePayload(response)
   const imageBase64 = imagePayload.b64Json
@@ -201,5 +280,5 @@ export async function generateImageViaOpenAICompat(request: OpenAICompatImageReq
   if (typeof imageUrl === 'string' && imageUrl.trim().length > 0) {
     return { success: true, imageUrl }
   }
-  throw new Error('OPENAI_COMPAT_IMAGE_EMPTY_RESPONSE: no image data returned')
+  throw new Error('[fieldinvalid] OPENAI_COMPAT_IMAGE_EMPTY_RESPONSE: no image data returned')
 }

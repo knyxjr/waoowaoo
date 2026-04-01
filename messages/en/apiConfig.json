@@ -99,6 +99,7 @@
   "addGeminiProvider": "Add Model Provider",
   "baseUrl": "Base URL",
   "configureBaseUrl": "Configure URL",
+  "imageChatMode": "Force Chat Mode for Images (Bypass Native Constraints)",
   "addModel": "Add Model",
   "batchModeHalfPrice": "Batch mode (50% price)",
   "openaiCompatVideoOnlyHint": "Only OpenAI official-format image-to-video models are supported.",

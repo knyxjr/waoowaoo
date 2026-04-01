@@ -266,7 +266,7 @@ export async function queryArkVideoStatus(taskId: string, apiKey: string): Promi
             status: 'succeeded',
             completed: true,
             failed: false,
-            resultUrl: data.content?.video_url
+            resultUrl: data.content?.[0]?.video_url?.url
         }
     }
 

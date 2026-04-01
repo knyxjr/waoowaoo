@@ -15,6 +15,7 @@ interface ImageSectionActionButtonsProps {
   onRegeneratePanelImage: (panelId: string, count?: number, force?: boolean) => void
   onOpenEditModal: () => void
   onOpenAIDataModal: () => void
+  onUploadImage: () => void
   onUndo?: (panelId: string) => void
   triggerPulse: () => void
 }
@@ -28,6 +29,7 @@ export default function ImageSectionActionButtons({
   onRegeneratePanelImage,
   onOpenEditModal,
   onOpenAIDataModal,
+  onUploadImage,
   onUndo,
   triggerPulse,
 }: ImageSectionActionButtonsProps) {
@@ -82,6 +84,16 @@ export default function ImageSectionActionButtons({
                 <span>{t('image.editImage')}</span>
               </button>
             )}
+
+            <button
+              onClick={onUploadImage}
+              disabled={isSubmittingPanelImageTask}
+              className="glass-btn-base glass-btn-secondary flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] transition-all active:scale-95 disabled:opacity-50"
+              title={t('image.uploadImage')}
+            >
+              <AppIcon name="upload" className="w-2.5 h-2.5" />
+              <span>{t('image.uploadImage')}</span>
+            </button>
 
             {previousImageUrl && onUndo && (
               <>

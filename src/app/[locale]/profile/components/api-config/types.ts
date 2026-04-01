@@ -22,6 +22,7 @@ export interface Provider {
     hidden?: boolean
     apiMode?: 'gemini-sdk' | 'openai-official'
     gatewayRoute?: 'official' | 'openai-compat'
+    imageChatMode?: boolean
 }
 
 export interface LlmCustomPricing {
@@ -136,7 +137,7 @@ export const PRESET_MODELS: PresetModel[] = [
     { modelId: 'doubao-seedance-1-0-pro-fast-251015', name: 'Seedance 1.0 Pro Fast', type: 'video', provider: 'ark' },
     { modelId: 'doubao-seedance-1-0-lite-i2v-250428', name: 'Seedance 1.0 Lite', type: 'video', provider: 'ark' },
     { modelId: 'doubao-seedance-1-5-pro-251215', name: 'Seedance 1.5 Pro', type: 'video', provider: 'ark' },
-    { modelId: 'doubao-seedance-2-0-260128', name: 'Seedance 2.0（待上线）', type: 'video', provider: 'ark' },
+    { modelId: 'doubao-seedance-2-0-260128', name: 'Seedance 2.0', type: 'video', provider: 'ark' },
     { modelId: 'doubao-seedance-1-0-pro-250528', name: 'Seedance 1.0 Pro', type: 'video', provider: 'ark' },
     // Google Veo
     { modelId: 'veo-3.1-generate-preview', name: 'Veo 3.1', type: 'video', provider: 'google' },
@@ -185,7 +186,6 @@ export const PRESET_MODELS: PresetModel[] = [
 ]
 
 const PRESET_COMING_SOON_MODEL_KEYS = new Set<string>([
-    encodeModelKey('ark', 'doubao-seedance-2-0-260128'),
 ])
 
 export function isPresetComingSoonModel(provider: string, modelId: string): boolean {

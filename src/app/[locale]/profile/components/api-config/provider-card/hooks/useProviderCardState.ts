@@ -45,6 +45,7 @@ interface UseProviderCardStateParams {
   defaultModels: ProviderCardProps['defaultModels']
   onUpdateApiKey: ProviderCardProps['onUpdateApiKey']
   onUpdateBaseUrl: ProviderCardProps['onUpdateBaseUrl']
+  onUpdateImageChatMode: ProviderCardProps['onUpdateImageChatMode']
   onUpdateModel: ProviderCardProps['onUpdateModel']
   onAddModel: ProviderCardProps['onAddModel']
   onFlushConfig: ProviderCardProps['onFlushConfig']
@@ -322,6 +323,7 @@ export interface UseProviderCardStateResult {
   handleCancelEdit: () => void
   handleSaveUrl: () => void
   handleCancelUrlEdit: () => void
+  handleUpdateImageChatMode: (enabled: boolean) => void
   handleEditModel: (model: CustomModel) => void
   handleCancelEditModel: () => void
   handleSaveModel: (originalModelKey: string) => Promise<void>
@@ -358,6 +360,7 @@ export function useProviderCardState({
   defaultModels,
   onUpdateApiKey,
   onUpdateBaseUrl,
+  onUpdateImageChatMode,
   onUpdateModel,
   onAddModel,
   onFlushConfig,
@@ -544,6 +547,10 @@ export function useProviderCardState({
   const handleCancelUrlEdit = () => {
     setTempUrl(provider.baseUrl || '')
     setIsEditingUrl(false)
+  }
+
+  const handleUpdateImageChatMode = (enabled: boolean) => {
+    onUpdateImageChatMode?.(provider.id, enabled)
   }
 
   const handleEditModel = (model: CustomModel) => {
@@ -809,6 +816,7 @@ export function useProviderCardState({
     handleCancelEdit,
     handleSaveUrl,
     handleCancelUrlEdit,
+    handleUpdateImageChatMode,
     handleEditModel,
     handleCancelEditModel,
     handleSaveModel,

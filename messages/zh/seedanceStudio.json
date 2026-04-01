@@ -1,0 +1,105 @@
+{
+  "title": "Seedance Studio",
+  "subtitle": "Seedance 2.0 视频生成工作台",
+  "model": {
+    "label": "模型",
+    "seedance2": "Seedance 2.0",
+    "seedance2Fast": "Seedance 2.0 Fast"
+  },
+  "mode": {
+    "label": "生成模式",
+    "textToVideo": "文生视频",
+    "textToVideoDesc": "纯文本描述生成视频",
+    "imageToVideo": "图生视频",
+    "imageToVideoDesc": "首帧/尾帧图片驱动生成",
+    "multiRef": "多模态参考",
+    "multiRefDesc": "图片/视频/音频参考 + 文本",
+    "videoEdit": "视频编辑",
+    "videoEditDesc": "参考视频 + 参考图片 + 编辑指令",
+    "videoExtend": "视频续写",
+    "videoExtendDesc": "基于已有视频继续生成"
+  },
+  "prompt": {
+    "label": "提示词",
+    "placeholder": "描述你想要生成的视频内容...",
+    "editPlaceholder": "描述你想要编辑的内容...",
+    "extendPlaceholder": "描述续写方向（可选）..."
+  },
+  "reference": {
+    "title": "多模态参考",
+    "images": "参考图片",
+    "imagesHint": "最多 9 张",
+    "videos": "参考视频",
+    "videosHint": "最多 3 个",
+    "audios": "参考音频",
+    "audiosHint": "最多 3 个",
+    "dropOrClick": "拖拽或点击上传",
+    "remove": "移除"
+  },
+  "firstLastFrame": {
+    "title": "首尾帧",
+    "firstFrame": "首帧图片",
+    "lastFrame": "尾帧图片（可选）",
+    "hint": "上传首帧图片，模型将从该画面开始生成视频"
+  },
+  "videoEdit": {
+    "refVideo": "参考视频",
+    "refVideoHint": "要编辑的原始视频",
+    "refImage": "参考图片",
+    "refImageHint": "编辑目标参考（可选）"
+  },
+  "videoExtend": {
+    "refVideos": "参考视频",
+    "refVideosHint": "要续写的视频（最多 3 个）"
+  },
+  "params": {
+    "title": "视频参数",
+    "resolution": "分辨率",
+    "ratio": "画面比例",
+    "ratioAdaptive": "自适应",
+    "duration": "时长（秒）",
+    "durationAuto": "自动",
+    "generateAudio": "生成音频",
+    "webSearch": "网络搜索增强",
+    "seed": "随机种子",
+    "seedPlaceholder": "留空随机"
+  },
+  "generate": {
+    "submit": "生成视频",
+    "submitting": "提交中...",
+    "count": "条",
+    "submitBatch": "生成 {count} 条",
+    "noPromptOrMedia": "请输入提示词或上传参考媒体"
+  },
+  "task": {
+    "title": "生成任务",
+    "empty": "暂无任务，在左侧配置参数后点击生成",
+    "total": "共 {count} 个任务",
+    "running": "生成中 {count}",
+    "completed": "已完成 {count}",
+    "failed": "失败 {count}",
+    "downloadAll": "下载全部",
+    "downloading": "打包下载中...",
+    "downloadProgress": "下载中 {current}/{total}",
+    "noVideos": "暂无可下载的视频",
+    "status": {
+      "submitting": "提交中",
+      "processing": "生成中",
+      "succeeded": "已完成",
+      "failed": "失败"
+    },
+    "retry": "重试",
+    "retryAll": "重试全部",
+    "download": "下载",
+    "remove": "移除"
+  },
+  "upload": {
+    "failed": "上传失败: {error}",
+    "tooLarge": "文件过大，最大 {max}MB",
+    "invalidType": "不支持的文件类型"
+  },
+  "error": {
+    "generateFailed": "生成失败: {error}",
+    "queryFailed": "查询任务状态失败"
+  }
+}

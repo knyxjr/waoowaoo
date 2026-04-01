@@ -59,6 +59,7 @@ interface StoryboardCanvasProps {
   onSelectPanelCandidateIndex: (panelId: string, index: number) => void
   onConfirmPanelCandidate: (panelId: string, imageUrl: string) => Promise<void>
   onCancelPanelCandidate: (panelId: string) => void
+  onUploadPanelImage: (panelId: string) => void
   onInsertPanel: (storyboardId: string, insertAfterPanelId: string, userInput: string) => Promise<void>
   onPanelVariant: (
     sourcePanelId: string,
@@ -117,6 +118,7 @@ export default function StoryboardCanvas({
   onSelectPanelCandidateIndex,
   onConfirmPanelCandidate,
   onCancelPanelCandidate,
+  onUploadPanelImage,
   onInsertPanel,
   onPanelVariant,
   addStoryboardGroup,
@@ -190,6 +192,7 @@ export default function StoryboardCanvas({
               onSelectPanelCandidateIndex={onSelectPanelCandidateIndex}
               onConfirmPanelCandidate={onConfirmPanelCandidate}
               onCancelPanelCandidate={onCancelPanelCandidate}
+              onUploadPanelImage={onUploadPanelImage}
               formatClipTitle={formatClipTitle}
               movingClipId={movingClipId}
               onInsertPanel={onInsertPanel}

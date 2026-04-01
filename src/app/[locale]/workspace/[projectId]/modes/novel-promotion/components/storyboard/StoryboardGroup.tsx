@@ -60,6 +60,7 @@ export default function StoryboardGroup({
   onSelectPanelCandidateIndex,
   onConfirmPanelCandidate,
   onCancelPanelCandidate,
+  onUploadPanelImage,
   formatClipTitle,
   movingClipId,
   onInsertPanel,
@@ -228,6 +229,7 @@ export default function StoryboardGroup({
         onSelectPanelCandidateIndex={onSelectPanelCandidateIndex}
         onConfirmPanelCandidate={onConfirmPanelCandidate}
         onCancelPanelCandidate={onCancelPanelCandidate}
+        onUploadPanelImage={onUploadPanelImage}
         onClearPanelTaskError={clearPanelTaskError}
         onPreviewImage={onPreviewImage}
         onInsertAfter={handleOpenInsertModal}

@@ -7,12 +7,13 @@ import { logInfo as _ulogInfo, logError as _ulogError } from '@/lib/logging/core
  * - Seedream 4.0
  * 
  * 视频模型：
+ * - Seedance 2.0 (doubao-seedance-2-0-260128)
+ * - Seedance 1.5 Pro (doubao-seedance-1-5-pro-251215)
  * - Seedance 1.0 Pro (doubao-seedance-1-0-pro-250528)
  * - Seedance 1.0 Lite (doubao-seedance-1-0-lite-i2v-250428)
- * - Seedance 1.5 Pro (doubao-seedance-1-5-pro-251215)
  * - 支持批量模式 (-batch 后缀)
  * - 支持首尾帧模式
- * - 支持音频生成 (Seedance 1.5 Pro)
+ * - 支持音频生成 (Seedance 1.5 Pro / 2.0)
  */
 
 import {
@@ -52,11 +53,17 @@ interface ArkVideoOptions {
     watermark?: boolean
     provider?: string
     modelKey?: string
+    referenceImages?: string[]
+    referenceVideos?: string[]
+    referenceAudios?: string[]
+    webSearch?: boolean
 }
 
 type ArkVideoContentItem =
     | { type: 'text'; text: string }
     | { type: 'image_url'; image_url: { url: string }; role?: 'first_frame' | 'last_frame' | 'reference_image' }
+    | { type: 'video_url'; video_url: { url: string }; role?: 'reference_video' }
+    | { type: 'audio_url'; audio_url: { url: string }; role?: 'reference_audio' }
 
 interface ArkSeedanceModelSpec {
     durationMin: number
@@ -104,6 +111,15 @@ const ARK_SEEDANCE_MODEL_SPECS: Record<string, ArkSeedanceModelSpec> = {
         supportsDraft: true,
         supportsFrames: false,
         resolutionOptions: ['480p', '720p', '1080p'],
+    },
+    'doubao-seedance-2-0-260128': {
+        durationMin: 4,
+        durationMax: 15,
+        supportsFirstLastFrame: true,
+        supportsGenerateAudio: true,
+        supportsDraft: false,
+        supportsFrames: false,
+        resolutionOptions: ['480p', '720p'],
     },
 }
 
@@ -277,7 +293,7 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
             frames,
             aspectRatio,
             generateAudio,
-            lastFrameImageUrl,  // 首尾帧模式的尾帧图片
+            lastFrameImageUrl,
             serviceTier,
             executionExpiresAfter,
             returnLastFrame,
@@ -285,6 +301,10 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
             seed,
             cameraFixed,
             watermark,
+            referenceImages,
+            referenceVideos,
+            referenceAudios,
+            webSearch,
         } = options as ArkVideoOptions
 
         const allowedOptionKeys = new Set([
@@ -304,6 +324,10 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
             'seed',
             'cameraFixed',
             'watermark',
+            'referenceImages',
+            'referenceVideos',
+            'referenceAudios',
+            'webSearch',
         ])
         for (const [key, value] of Object.entries(options)) {
             if (value === undefined) continue
@@ -331,8 +355,8 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
             if (durationOutOfRange) {
                 throw new Error(`ARK_VIDEO_OPTION_VALUE_UNSUPPORTED: duration=${duration}`)
             }
-            if (duration === -1 && realModel !== 'doubao-seedance-1-5-pro-251215') {
-                throw new Error('ARK_VIDEO_OPTION_VALUE_UNSUPPORTED: duration=-1 only supported by Seedance 1.5 Pro')
+            if (duration === -1 && realModel !== 'doubao-seedance-1-5-pro-251215' && realModel !== 'doubao-seedance-2-0-260128') {
+                throw new Error('ARK_VIDEO_OPTION_VALUE_UNSUPPORTED: duration=-1 only supported by Seedance 1.5 Pro / 2.0')
             }
         }
         if (frames !== undefined) {
@@ -391,34 +415,54 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
 
         _ulogInfo(`[ARK Video] 模型: ${realModel}, 批量: ${isBatchMode}, 分辨率: ${resolution || '(默认)'}, 时长: ${duration ?? '(默认)'}`)
 
-        // 转换图片为 base64
-        const imageBase64 = await normalizeToBase64ForGeneration(imageUrl)
-
         // 构建请求体 content
         const content: ArkVideoContentItem[] = []
         if (prompt.trim()) {
             content.push({ type: 'text', text: prompt })
         }
 
-        if (lastFrameImageUrl) {
-            // 首尾帧模式
-            const lastImageBase64 = await normalizeToBase64ForGeneration(lastFrameImageUrl)
-            content.push({
-                type: 'image_url',
-                image_url: { url: imageBase64 },
-                role: 'first_frame'
-            })
-            content.push({
-                type: 'image_url',
-                image_url: { url: lastImageBase64 },
-                role: 'last_frame'
-            })
-            _ulogInfo(`[ARK Video] 首尾帧模式`)
-        } else {
-            content.push({
-                type: 'image_url',
-                image_url: { url: imageBase64 }
-            })
+        if (imageUrl) {
+            const imageBase64 = await normalizeToBase64ForGeneration(imageUrl)
+            if (lastFrameImageUrl) {
+                const lastImageBase64 = await normalizeToBase64ForGeneration(lastFrameImageUrl)
+                content.push({
+                    type: 'image_url',
+                    image_url: { url: imageBase64 },
+                    role: 'first_frame'
+                })
+                content.push({
+                    type: 'image_url',
+                    image_url: { url: lastImageBase64 },
+                    role: 'last_frame'
+                })
+                _ulogInfo(`[ARK Video] 首尾帧模式`)
+            } else {
+                content.push({
+                    type: 'image_url',
+                    image_url: { url: imageBase64 }
+                })
+            }
+        }
+
+        // 多模态参考
+        if (referenceImages?.length) {
+            for (const refImg of referenceImages) {
+                const b64 = await normalizeToBase64ForGeneration(refImg)
+                content.push({ type: 'image_url', image_url: { url: b64 }, role: 'reference_image' })
+            }
+            _ulogInfo(`[ARK Video] 参考图片: ${referenceImages.length} 张`)
+        }
+        if (referenceVideos?.length) {
+            for (const refVid of referenceVideos) {
+                content.push({ type: 'video_url', video_url: { url: refVid }, role: 'reference_video' })
+            }
+            _ulogInfo(`[ARK Video] 参考视频: ${referenceVideos.length} 个`)
+        }
+        if (referenceAudios?.length) {
+            for (const refAud of referenceAudios) {
+                content.push({ type: 'audio_url', audio_url: { url: refAud }, role: 'reference_audio' })
+            }
+            _ulogInfo(`[ARK Video] 参考音频: ${referenceAudios.length} 个`)
         }
 
         const requestBody: {
@@ -436,6 +480,7 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
             execution_expires_after?: number
             generate_audio?: boolean
             draft?: boolean
+            tools?: Array<{ type: 'web_search' }>
         } = {
             model: realModel,
             content
@@ -484,9 +529,14 @@ export class ArkVideoGenerator extends BaseVideoGenerator {
             _ulogInfo('[ARK Video] 批量模式: service_tier=flex')
         }
 
-        // 音频生成（仅 Seedance 1.5 Pro）
+        // 音频生成（仅 Seedance 1.5 Pro / 2.0）
         if (generateAudio !== undefined) {
             requestBody.generate_audio = generateAudio
+        }
+
+        // 网络搜索增强
+        if (webSearch) {
+            requestBody.tools = [{ type: 'web_search' }]
         }
 
         try {

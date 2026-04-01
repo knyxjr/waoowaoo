@@ -10,6 +10,7 @@ export interface OpenAICompatClientConfig {
   providerId: string
   baseUrl: string
   apiKey: string
+  imageChatMode?: boolean
 }
 
 export interface OpenAICompatImageRequest {

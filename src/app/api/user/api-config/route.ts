@@ -64,6 +64,7 @@ interface StoredProvider {
   hidden?: boolean
   apiMode?: ApiModeType
   gatewayRoute?: GatewayRouteType
+  imageChatMode?: boolean
 }
 
 interface StoredModelLlmCustomPricing {
@@ -903,6 +904,14 @@ function normalizeProvidersInput(rawProviders: unknown): StoredProvider[] {
         field: `providers[${index}].hidden`,
       })
     }
+    
+    const imageChatModeRaw = item.imageChatMode
+    if (imageChatModeRaw !== undefined && typeof imageChatModeRaw !== 'boolean') {
+      throw new ApiError('INVALID_PARAMS', {
+        code: 'PROVIDER_IMAGE_CHAT_MODE_INVALID',
+        field: `providers[${index}].imageChatMode`,
+      })
+    }
 
     const baseUrl = normalizeMinimaxProviderBaseUrl({
       providerId: id,
@@ -919,6 +928,7 @@ function normalizeProvidersInput(rawProviders: unknown): StoredProvider[] {
       hidden: hiddenRaw === true,
       apiMode: apiModeRaw,
       gatewayRoute,
+      imageChatMode: imageChatModeRaw === true ? true : undefined,
     })
   }
 
@@ -1461,6 +1471,14 @@ function parseStoredProviders(rawProviders: string | null | undefined): StoredPr
       })
     }
 
+    const imageChatModeRaw = raw.imageChatMode
+    if (imageChatModeRaw !== undefined && typeof imageChatModeRaw !== 'boolean') {
+      throw new ApiError('INVALID_PARAMS', {
+        code: 'PROVIDER_IMAGE_CHAT_MODE_INVALID',
+        field: `customProviders[${index}].imageChatMode`,
+      })
+    }
+
     const baseUrl = normalizeMinimaxProviderBaseUrl({
       providerId: id,
       baseUrl: readTrimmedString(raw.baseUrl) || undefined,
@@ -1476,6 +1494,7 @@ function parseStoredProviders(rawProviders: string | null | undefined): StoredPr
       hidden: hiddenRaw === true,
       apiMode,
       gatewayRoute,
+      imageChatMode: imageChatModeRaw === true ? true : undefined,
     })
   }
 

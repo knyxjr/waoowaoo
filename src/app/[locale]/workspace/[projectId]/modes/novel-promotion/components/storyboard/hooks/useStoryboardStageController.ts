@@ -137,6 +137,7 @@ export function useStoryboardStageController({
     modifyPanelImage,
     downloadAllImages,
     clearStoryboardError,
+    uploadPanelImage,
   } = imageOps
 
   const updatePhotographyPlanMutation = useUpdateProjectPhotographyPlan(projectId)
@@ -199,7 +200,7 @@ export function useStoryboardStageController({
     submittingStoryboardIds, submittingPanelImageIds, selectingCandidateIds,
     editingPanel, setEditingPanel, modifyingPanels, isDownloadingImages, previewImage, setPreviewImage,
     regeneratePanelImage, regenerateAllPanelsIndividually, selectPanelCandidate, selectPanelCandidateIndex,
-    cancelPanelCandidate, getPanelCandidates, modifyPanelImage, downloadAllImages, clearStoryboardError,
+    cancelPanelCandidate, getPanelCandidates, modifyPanelImage, downloadAllImages, clearStoryboardError, uploadPanelImage,
     assetPickerPanel, setAssetPickerPanel, aiDataPanel, setAIDataPanel, isEpisodeBatchSubmitting,
     getDefaultAssetsForClip, handleEditSubmit, handlePanelUpdate, handleAddCharacter, handleSetLocation, handleRemoveCharacter, handleRemoveLocation,
     retrySave,

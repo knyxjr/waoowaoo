@@ -135,9 +135,7 @@ export async function chatCompletionWithVision(
         for (const url of imageUrls) {
           let finalUrl = url
           try {
-            if (!url.startsWith('http') && !url.startsWith('data:')) {
-              finalUrl = await normalizeToBase64ForGeneration(url)
-            } else if (url.startsWith('/')) {
+            if (!url.startsWith('data:')) {
               finalUrl = await normalizeToBase64ForGeneration(url)
             }
           } catch (e) {
@@ -239,15 +237,12 @@ export async function chatCompletionWithVision(
 
       for (const url of imageUrls) {
         let finalUrl = url
-        if (url.startsWith('/api/files/') || url.startsWith('/')) {
+        if (!url.startsWith('data:')) {
           try {
             const { normalizeToBase64ForGeneration } = await import('@/lib/media/outbound-image')
             finalUrl = await normalizeToBase64ForGeneration(url)
-            _ulogInfo('[LLM Vision] 转换本地图片为 Base64')
           } catch (e) {
-            _ulogError('[LLM Vision] 转换本地图片失败:', e)
-            const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-            finalUrl = `${baseUrl}${url}`
+            _ulogError('[LLM Vision] 转换图片失败:', e)
           }
         }
         content.push({ type: 'image_url', image_url: { url: finalUrl } })

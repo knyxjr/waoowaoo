@@ -69,10 +69,12 @@ interface ArkImageGenerationResponse {
 interface ArkVideoTaskRequest {
     model: string
     content: Array<{
-        type: 'image_url' | 'text' | 'draft_task'
+        type: 'image_url' | 'text' | 'draft_task' | 'video_url' | 'audio_url'
         image_url?: { url: string }
+        video_url?: { url: string }
+        audio_url?: { url: string }
         text?: string
-        role?: 'first_frame' | 'last_frame' | 'reference_image'
+        role?: 'first_frame' | 'last_frame' | 'reference_image' | 'reference_video' | 'reference_audio'
         draft_task?: { id: string }
     }>
     resolution?: '480p' | '720p' | '1080p'
@@ -87,6 +89,7 @@ interface ArkVideoTaskRequest {
     execution_expires_after?: number
     generate_audio?: boolean
     draft?: boolean
+    tools?: Array<{ type: 'web_search' }>
 }
 
 interface ArkVideoTaskResponse {
@@ -131,6 +134,7 @@ function validateArkVideoTaskRequest(request: ArkVideoTaskRequest) {
         'execution_expires_after',
         'generate_audio',
         'draft',
+        'tools',
     ])
     for (const key of Object.keys(request)) {
         if (!allowedTopLevelKeys.has(key)) {
@@ -158,7 +162,7 @@ function validateArkVideoTaskRequest(request: ArkVideoTaskRequest) {
         if (!isInteger(request.duration)) {
             throw new Error('ARK_VIDEO_REQUEST_INVALID: duration must be integer')
         }
-        if (request.duration !== -1 && (request.duration < 2 || request.duration > 12)) {
+        if (request.duration !== -1 && (request.duration < 2 || request.duration > 15)) {
             throw new Error(`ARK_VIDEO_REQUEST_INVALID: duration=${request.duration}`)
         }
     }
@@ -239,6 +243,26 @@ function validateArkVideoTaskRequest(request: ArkVideoTaskRequest) {
             continue
         }
 
+        if (item.type === 'video_url') {
+            if (!isRecord(item.video_url) || !isNonEmptyString(item.video_url.url)) {
+                throw new Error(`ARK_VIDEO_REQUEST_INVALID: ${path}.video_url.url is required`)
+            }
+            if (item.role !== undefined && item.role !== 'reference_video') {
+                throw new Error(`ARK_VIDEO_REQUEST_INVALID: ${path}.role=${String(item.role)}`)
+            }
+            continue
+        }
+
+        if (item.type === 'audio_url') {
+            if (!isRecord(item.audio_url) || !isNonEmptyString(item.audio_url.url)) {
+                throw new Error(`ARK_VIDEO_REQUEST_INVALID: ${path}.audio_url.url is required`)
+            }
+            if (item.role !== undefined && item.role !== 'reference_audio') {
+                throw new Error(`ARK_VIDEO_REQUEST_INVALID: ${path}.role=${String(item.role)}`)
+            }
+            continue
+        }
+
         if (item.type === 'draft_task') {
             if (!isRecord(item.draft_task) || !isNonEmptyString(item.draft_task.id)) {
                 throw new Error(`ARK_VIDEO_REQUEST_INVALID: ${path}.draft_task.id is required`)
@@ -247,6 +271,17 @@ function validateArkVideoTaskRequest(request: ArkVideoTaskRequest) {
         }
 
         throw new Error(`ARK_VIDEO_REQUEST_INVALID: ${path}.type=${String((item as { type?: unknown }).type)}`)
+    }
+
+    if (request.tools !== undefined) {
+        if (!Array.isArray(request.tools)) {
+            throw new Error('ARK_VIDEO_REQUEST_INVALID: tools must be an array')
+        }
+        for (const tool of request.tools) {
+            if (!isRecord(tool) || tool.type !== 'web_search') {
+                throw new Error(`ARK_VIDEO_REQUEST_INVALID: tools[].type must be "web_search"`)
+            }
+        }
     }
 }
 

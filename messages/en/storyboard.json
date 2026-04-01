@@ -130,6 +130,7 @@
         "regenerate": "Regenerate",
         "edit": "Edit",
         "editImage": "Edit Image",
+        "uploadImage": "Upload",
         "candidate": "Candidate",
         "selectCandidate": "Select Candidate",
         "variants": "Variants",

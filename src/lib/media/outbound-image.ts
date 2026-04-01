@@ -386,10 +386,43 @@ export async function normalizeToOriginalMediaUrl(input: string): Promise<string
   })
 }
 
+function extractStorageKeyFromInternalUrl(urlOrPath: string): string | null {
+  const parsed = toUrlMaybe(urlOrPath)
+  if (!parsed) return null
+
+  if (parsed.pathname === '/api/storage/sign') {
+    const key = parsed.searchParams.get('key')
+    if (key && isStorageKey(key)) return key
+  }
+  if (parsed.pathname.startsWith('/api/files/')) {
+    const key = decodeURIComponent(parsed.pathname.slice('/api/files/'.length))
+    if (key && isStorageKey(key)) return key
+  }
+
+  return null
+}
+
 export async function normalizeToBase64ForGeneration(input: string): Promise<string> {
   const normalizedUrl = await normalizeToOriginalMediaUrl(input)
   if (isDataUrl(normalizedUrl)) {
     return normalizedUrl
+  }
+
+  const internalKey = extractStorageKeyFromInternalUrl(normalizedUrl)
+  if (internalKey) {
+    const { getObjectBuffer } = await import('@/lib/storage')
+    try {
+      const buffer = await getObjectBuffer(internalKey)
+      const mimeType = guessContentType(internalKey, null, new Uint8Array(buffer))
+      return `data:${mimeType};base64,${buffer.toString('base64')}`
+    } catch (e) {
+      throw new OutboundImageNormalizeError({
+        code: 'OUTBOUND_IMAGE_FETCH_EXCEPTION',
+        stage: 'normalize_base64',
+        input: internalKey,
+        message: `normalizeToBase64ForGeneration direct read failed: ${e instanceof Error ? e.message : String(e)}`,
+      })
+    }
   }
 
   const fetchUrl = await toFetchableAbsoluteUrl(normalizedUrl)

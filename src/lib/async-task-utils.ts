@@ -307,7 +307,7 @@ export async function querySeedanceVideoStatus(taskId: string, apiKey: string): 
         const status = queryData.status
 
         if (status === 'succeeded') {
-            const videoUrl = queryData.content?.video_url
+            const videoUrl = queryData.content?.[0]?.video_url?.url
 
             if (videoUrl) {
                 return { status: 'completed', videoUrl }

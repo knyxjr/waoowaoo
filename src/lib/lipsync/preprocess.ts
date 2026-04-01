@@ -314,13 +314,6 @@ async function toProviderAudioInput(
   providerKey: LipSyncProviderKey,
   buffer: Buffer,
 ): Promise<string> {
-  if (providerKey === 'vidu') {
-    const { uploadObject, getSignedUrl } = await import('@/lib/storage')
-    const storageKey = `voice/temp/lip-sync-preprocessed/${randomUUID()}.wav`
-    await uploadObject(buffer, storageKey, 1, 'audio/wav')
-    return toFetchableUrl(getSignedUrl(storageKey, 7200))
-  }
-
   return toAudioDataUrl(buffer)
 }
 

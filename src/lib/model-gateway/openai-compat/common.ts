@@ -9,6 +9,22 @@ function toAbsoluteUrlIfNeeded(value: string): string {
   return `${baseUrl}${value}`
 }
 
+export async function toInlineData(imageSource: string): Promise<{ mimeType: string; data: string } | null> {
+  const parsedDataUrl = parseDataUrl(imageSource)
+  if (parsedDataUrl) {
+    return { mimeType: parsedDataUrl.mimeType, data: parsedDataUrl.base64 }
+  }
+
+  if (imageSource.startsWith('http://') || imageSource.startsWith('https://') || imageSource.startsWith('/')) {
+    const cachedDataUrl = await getImageBase64Cached(toAbsoluteUrlIfNeeded(imageSource))
+    const parsedCachedDataUrl = parseDataUrl(cachedDataUrl)
+    if (!parsedCachedDataUrl) return null
+    return { mimeType: parsedCachedDataUrl.mimeType, data: parsedCachedDataUrl.base64 }
+  }
+
+  return { mimeType: 'image/png', data: imageSource }
+}
+
 export function parseDataUrl(value: string): { mimeType: string; base64: string } | null {
   const marker = ';base64,'
   const markerIndex = value.indexOf(marker)
@@ -40,6 +56,7 @@ export async function resolveOpenAICompatClientConfig(userId: string, providerId
     providerId: config.id,
     baseUrl: config.baseUrl,
     apiKey: config.apiKey,
+    imageChatMode: config.imageChatMode,
   }
 }
 

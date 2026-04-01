@@ -236,11 +236,12 @@ export class FalVideoGenerator extends BaseVideoGenerator {
 
         // 根据模型构建不同的请求体
         let input: Record<string, unknown>
+        const resolvedImageUrl = await normalizeToBase64ForGeneration(imageUrl)
 
         switch (modelId) {
             case 'fal-wan25':
                 input = {
-                    image_url: imageUrl,
+                    image_url: resolvedImageUrl,
                     prompt,
                     ...(resolution ? { resolution } : {}),
                     ...(typeof duration === 'number' ? { duration: String(duration) } : {})
@@ -248,7 +249,7 @@ export class FalVideoGenerator extends BaseVideoGenerator {
                 break
             case 'fal-veo31':
                 input = {
-                    image_url: imageUrl,
+                    image_url: resolvedImageUrl,
                     prompt,
                     ...(aspectRatio ? { aspect_ratio: aspectRatio } : {}),
                     ...(typeof duration === 'number' ? { duration: `${duration}s` } : {}),
@@ -257,7 +258,7 @@ export class FalVideoGenerator extends BaseVideoGenerator {
                 break
             case 'fal-sora2':
                 input = {
-                    image_url: imageUrl,
+                    image_url: resolvedImageUrl,
                     prompt,
                     ...(aspectRatio ? { aspect_ratio: aspectRatio } : {}),
                     ...(typeof duration === 'number' ? { duration } : {}),
@@ -266,7 +267,7 @@ export class FalVideoGenerator extends BaseVideoGenerator {
                 break
             case 'fal-ai/kling-video/v2.5-turbo/pro/image-to-video':
                 input = {
-                    image_url: imageUrl,
+                    image_url: resolvedImageUrl,
                     prompt,
                     ...(typeof duration === 'number' ? { duration: String(duration) } : {}),
                     negative_prompt: 'blur, distort, and low quality',
@@ -276,7 +277,7 @@ export class FalVideoGenerator extends BaseVideoGenerator {
             case 'fal-ai/kling-video/v3/standard/image-to-video':
             case 'fal-ai/kling-video/v3/pro/image-to-video':
                 input = {
-                    start_image_url: imageUrl,
+                    start_image_url: resolvedImageUrl,
                     prompt,
                     ...(aspectRatio ? { aspect_ratio: aspectRatio } : {}),
                     ...(typeof duration === 'number' ? { duration: String(duration) } : {}),

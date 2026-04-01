@@ -55,6 +55,7 @@ interface CustomProvider {
   apiKey?: string
   apiMode?: 'gemini-sdk' | 'openai-official'
   gatewayRoute?: GatewayRouteType
+  imageChatMode?: boolean
 }
 
 type LlmProtocolType = 'responses' | 'chat-completions'
@@ -177,6 +178,15 @@ function parseCustomProviders(rawProviders: string | null | undefined): CustomPr
       gatewayRoute = gatewayRouteRaw
     }
 
+    const imageChatModeRaw = raw.imageChatMode
+    let imageChatMode: boolean | undefined
+    if (imageChatModeRaw !== undefined) {
+      if (typeof imageChatModeRaw !== 'boolean') {
+        throw new Error(`PROVIDER_IMAGE_CHAT_MODE_INVALID: providers[${index}].imageChatMode`)
+      }
+      imageChatMode = imageChatModeRaw
+    }
+
     providers.push({
       id,
       name,
@@ -184,6 +194,7 @@ function parseCustomProviders(rawProviders: string | null | undefined): CustomPr
       apiKey: readTrimmedString(raw.apiKey) || undefined,
       apiMode,
       gatewayRoute,
+      imageChatMode,
     })
   }
 
@@ -413,6 +424,7 @@ export interface ProviderConfig {
   baseUrl?: string
   apiMode?: 'gemini-sdk' | 'openai-official'
   gatewayRoute?: GatewayRouteType
+  imageChatMode?: boolean
 }
 
 export async function getProviderConfig(userId: string, providerId: string): Promise<ProviderConfig> {
@@ -430,6 +442,7 @@ export async function getProviderConfig(userId: string, providerId: string): Pro
     baseUrl: normalizeProviderBaseUrl(provider.id, provider.baseUrl),
     apiMode: provider.apiMode,
     gatewayRoute: provider.gatewayRoute,
+    imageChatMode: provider.imageChatMode,
   }
 }
 

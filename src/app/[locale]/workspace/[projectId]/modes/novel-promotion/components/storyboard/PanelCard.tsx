@@ -42,6 +42,7 @@ interface PanelCardProps {
   onSelectCandidateIndex: (panelId: string, index: number) => void
   onConfirmCandidate: (panelId: string, imageUrl: string) => Promise<void>
   onCancelCandidate: (panelId: string) => void
+  onUploadImage: () => void
   onClearError: () => void
   onUndo?: (panelId: string) => void  // 撤回到上一版本
   onPreviewImage?: (url: string) => void  // 放大预览图片
@@ -79,6 +80,7 @@ export default function PanelCard({
   onSelectCandidateIndex,
   onConfirmCandidate,
   onCancelCandidate,
+  onUploadImage,
   onClearError,
   onUndo,
   onPreviewImage,
@@ -125,6 +127,7 @@ export default function PanelCard({
           onSelectCandidateIndex={onSelectCandidateIndex}
           onConfirmCandidate={onConfirmCandidate}
           onCancelCandidate={onCancelCandidate}
+          onUploadImage={onUploadImage}
           onClearError={onClearError}
           onUndo={onUndo}
           onPreviewImage={onPreviewImage}

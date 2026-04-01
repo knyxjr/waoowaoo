@@ -92,6 +92,7 @@ export default function StoryboardStage({
     getPanelCandidates,
     downloadAllImages,
     clearStoryboardError,
+    uploadPanelImage,
 
     assetPickerPanel,
     setAssetPickerPanel,
@@ -210,6 +211,7 @@ export default function StoryboardStage({
           onSelectPanelCandidateIndex={selectPanelCandidateIndex}
           onConfirmPanelCandidate={selectPanelCandidate}
           onCancelPanelCandidate={cancelPanelCandidate}
+          onUploadPanelImage={uploadPanelImage}
 
           onInsertPanel={insertPanel}
           onPanelVariant={generatePanelVariant}

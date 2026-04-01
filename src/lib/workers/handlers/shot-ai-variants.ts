@@ -1,7 +1,6 @@
 import type { Job } from 'bullmq'
 import { safeParseJsonArray } from '@/lib/json-repair'
 import { prisma } from '@/lib/prisma'
-import { getSignedUrl } from '@/lib/storage'
 import { executeAiVisionStep } from '@/lib/ai-runtime'
 import { withInternalLLMStreamCallbacks } from '@/lib/llm-observe/internal-stream-context'
 import { reportTaskProgress } from '@/lib/workers/shared'
@@ -68,9 +67,7 @@ export async function handleAnalyzeShotVariantsTask(job: Job<TaskJobData>, paylo
   if (!panel) throw new Error('Panel not found')
   if (!panel.imageUrl) throw new Error('该镜头还没有生成图片，无法分析变体')
 
-  const imageUrl = panel.imageUrl.startsWith('images/')
-    ? getSignedUrl(panel.imageUrl, 3600)
-    : panel.imageUrl
+  const imageUrl = panel.imageUrl
   const charactersInfo = parsePanelCharacters(panel.characters)
 
   const prompt = buildPrompt({

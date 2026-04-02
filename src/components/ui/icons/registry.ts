@@ -44,6 +44,7 @@ import {
   Loader2,
   Lock,
   LogOut,
+  Layers,
   Menu,
   Mic,
   Minus,
@@ -186,6 +187,8 @@ export const iconRegistry = {
   film: Film,
   folderOpen: FolderOpen,
   gripVertical: GripVertical,
+  layers: Layers,
+  pencil: Pencil,
 } as const satisfies Record<string, LucideIcon>
 
 export type AppIconName = keyof typeof iconRegistry

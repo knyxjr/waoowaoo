@@ -2,8 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiFetch } from '@/lib/api-fetch'
-
-const STORAGE_KEY = 'seedance-studio-tasks'
+import { sessionStorageKey } from './useStudioSessions'
 
 const FRIENDLY_ERRORS: Record<string, string> = {
     'InputImageSensitiveContentDetected.PrivacyInformation': '输入图片包含真人面部，请更换图片',
@@ -34,7 +33,7 @@ function extractErrorMessage(data: Record<string, unknown>, status: number): str
     return `请求失败 (${status})`
 }
 
-interface GenerateParams {
+export interface VideoGenerateParams {
     model: string
     prompt: string
     content: Array<Record<string, unknown>>
@@ -46,76 +45,70 @@ interface GenerateParams {
     tools?: Array<{ type: 'web_search' }>
 }
 
-interface SeedanceTask {
+export interface VideoTask {
     id: string
     taskId: string
     status: 'submitting' | 'processing' | 'succeeded' | 'failed'
     videoUrl?: string
     error?: string
     prompt: string
-    params?: GenerateParams
+    customName?: string
+    params?: VideoGenerateParams
     createdAt: number
 }
 
-function loadTasks(): SeedanceTask[] {
+function loadTasks(storageKey: string): VideoTask[] {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY)
+        const raw = localStorage.getItem(storageKey)
         if (!raw) return []
-        const parsed = JSON.parse(raw) as SeedanceTask[]
+        const parsed = JSON.parse(raw) as VideoTask[]
         return parsed
             .map(t => t.status === 'submitting' ? { ...t, status: 'failed' as const, error: '页面刷新，提交中断' } : t)
             .sort((a, b) => b.createdAt - a.createdAt)
     } catch { return [] }
 }
 
-function saveTasks(tasks: SeedanceTask[]) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)) } catch { /* quota */ }
-}
-
-export function useSeedanceGenerate() {
-    const [tasks, setTasks] = useState<SeedanceTask[]>(() => loadTasks())
+export function useVideoGenerate(sessionId: string) {
+    const storageKey = sessionStorageKey(sessionId, 'video-tasks')
+    const [tasks, setTasks] = useState<VideoTask[]>(() => loadTasks(storageKey))
     const pollingRef = useRef<Set<string>>(new Set())
 
-    // Persist to localStorage on every change
-    useEffect(() => { saveTasks(tasks) }, [tasks])
+    useEffect(() => {
+        setTasks(loadTasks(storageKey))
+    }, [storageKey])
+
+    useEffect(() => {
+        try { localStorage.setItem(storageKey, JSON.stringify(tasks)) } catch { /* quota */ }
+    }, [tasks, storageKey])
 
     const pollTask = useCallback(async (id: string, taskId: string) => {
         if (pollingRef.current.has(taskId)) return
         pollingRef.current.add(taskId)
-
         let consecutiveErrors = 0
         try {
-            // eslint-disable-next-line no-constant-condition
             while (true) {
                 await new Promise(r => setTimeout(r, 5000))
                 try {
                     const res = await apiFetch(`/api/seedance-studio/task?taskId=${taskId}`)
                     if (res.status === 404) {
-                        setTasks(prev => prev.map(t =>
-                            t.id === id ? { ...t, status: 'failed', error: '任务已过期或不存在' } : t
-                        ))
+                        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'failed', error: '任务已过期或不存在' } : t))
                         return
                     }
                     if (!res.ok) { consecutiveErrors++; if (consecutiveErrors > 20) break; continue }
                     consecutiveErrors = 0
                     const data = await res.json()
-
                     if (data.status === 'succeeded') {
                         const c = data.content
                         const videoUrl = data.videoUrl
                             || (Array.isArray(c) ? c[0]?.video_url?.url ?? c[0]?.video_url : null)
                             || (c && typeof c === 'object' && !Array.isArray(c) ? (typeof c.video_url === 'string' ? c.video_url : c.video_url?.url) : null)
-                        setTasks(prev => prev.map(t =>
-                            t.id === id ? { ...t, status: 'succeeded', videoUrl } : t
-                        ))
+                        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'succeeded', videoUrl } : t))
                         return
                     }
                     if (data.status === 'failed') {
                         const errMsg = data.error?.message || data.error?.code || '生成失败'
                         const friendlyMsg = FRIENDLY_ERRORS[data.error?.code] || errMsg
-                        setTasks(prev => prev.map(t =>
-                            t.id === id ? { ...t, status: 'failed', error: friendlyMsg } : t
-                        ))
+                        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'failed', error: friendlyMsg } : t))
                         return
                     }
                 } catch {
@@ -123,36 +116,20 @@ export function useSeedanceGenerate() {
                     if (consecutiveErrors > 20) break
                 }
             }
-            setTasks(prev => prev.map(t =>
-                t.id === id ? { ...t, status: 'failed', error: '网络连续异常，轮询中止' } : t
-            ))
-        } finally {
-            pollingRef.current.delete(taskId)
-        }
+            setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'failed', error: '网络连续异常，轮询中止' } : t))
+        } finally { pollingRef.current.delete(taskId) }
     }, [])
 
-    // Resume polling for tasks that were 'processing' before refresh
     useEffect(() => {
         const pending = tasks.filter(t => t.status === 'processing' && t.taskId)
-        for (const t of pending) {
-            pollTask(t.id, t.taskId)
-        }
-        // Only run on mount
+        for (const t of pending) pollTask(t.id, t.taskId)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const generate = useCallback(async (params: GenerateParams) => {
+    const generate = useCallback(async (params: VideoGenerateParams) => {
         const tempId = crypto.randomUUID()
-        const task: SeedanceTask = {
-            id: tempId,
-            taskId: '',
-            status: 'submitting',
-            prompt: params.prompt,
-            params,
-            createdAt: Date.now(),
-        }
+        const task: VideoTask = { id: tempId, taskId: '', status: 'submitting', prompt: params.prompt, params, createdAt: Date.now() }
         setTasks(prev => [task, ...prev])
-
         try {
             const res = await apiFetch('/api/seedance-studio/generate', {
                 method: 'POST',
@@ -164,27 +141,20 @@ export function useSeedanceGenerate() {
                 throw new Error(extractErrorMessage(data, res.status))
             }
             const data = await res.json()
-            setTasks(prev => prev.map(t =>
-                t.id === tempId ? { ...t, taskId: data.taskId, status: 'processing' } : t
-            ))
+            setTasks(prev => prev.map(t => t.id === tempId ? { ...t, taskId: data.taskId, status: 'processing' } : t))
             pollTask(tempId, data.taskId)
         } catch (err) {
-            setTasks(prev => prev.map(t =>
-                t.id === tempId ? { ...t, status: 'failed', error: String(err) } : t
-            ))
+            setTasks(prev => prev.map(t => t.id === tempId ? { ...t, status: 'failed', error: String(err) } : t))
         }
     }, [pollTask])
 
     const retryTask = useCallback(async (id: string) => {
         const task = tasks.find(t => t.id === id)
         if (!task) return
-
         if (task.taskId) {
-            // Has taskId → re-poll
             setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'processing' as const, error: undefined } : t))
             pollTask(id, task.taskId)
         } else if (task.params) {
-            // No taskId but has params → re-submit
             setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'submitting' as const, error: undefined } : t))
             try {
                 const res = await apiFetch('/api/seedance-studio/generate', {
@@ -197,29 +167,26 @@ export function useSeedanceGenerate() {
                     throw new Error(extractErrorMessage(data, res.status))
                 }
                 const data = await res.json()
-                setTasks(prev => prev.map(t =>
-                    t.id === id ? { ...t, taskId: data.taskId, status: 'processing' as const } : t
-                ))
+                setTasks(prev => prev.map(t => t.id === id ? { ...t, taskId: data.taskId, status: 'processing' as const } : t))
                 pollTask(id, data.taskId)
             } catch (err) {
-                setTasks(prev => prev.map(t =>
-                    t.id === id ? { ...t, status: 'failed' as const, error: String(err) } : t
-                ))
+                setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'failed' as const, error: String(err) } : t))
             }
         }
     }, [tasks, pollTask])
 
     const retryAllFailed = useCallback(() => {
         const failed = tasks.filter(t => t.status === 'failed')
-        if (failed.length === 0) return
-        for (const t of failed) {
-            retryTask(t.id)
-        }
+        for (const t of failed) retryTask(t.id)
     }, [tasks, retryTask])
 
     const removeTask = useCallback((id: string) => {
         setTasks(prev => prev.filter(t => t.id !== id))
     }, [])
 
-    return { tasks, generate, removeTask, retryTask, retryAllFailed }
+    const renameTask = useCallback((id: string, name: string) => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, customName: name } : t))
+    }, [])
+
+    return { tasks, generate, removeTask, retryTask, retryAllFailed, renameTask }
 }

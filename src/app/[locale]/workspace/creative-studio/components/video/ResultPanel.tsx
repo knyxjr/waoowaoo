@@ -11,6 +11,7 @@ interface Task {
     videoUrl?: string
     error?: string
     prompt: string
+    customName?: string
     createdAt: number
 }
 
@@ -19,11 +20,14 @@ interface ResultPanelProps {
     onRemove: (id: string) => void
     onRetry: (id: string) => void
     onRetryAll: () => void
+    onRename: (id: string, name: string) => void
 }
 
-export default function ResultPanel({ tasks, onRemove, onRetry, onRetryAll }: ResultPanelProps) {
+export default function ResultPanel({ tasks, onRemove, onRetry, onRetryAll, onRename }: ResultPanelProps) {
     const t = useTranslations('seedanceStudio.task')
     const [playingId, setPlayingId] = useState<string | null>(null)
+    const [renamingTaskId, setRenamingTaskId] = useState<string | null>(null)
+    const [renameValue, setRenameValue] = useState('')
     const [isDownloadingAll, setIsDownloadingAll] = useState(false)
     const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number } | null>(null)
     const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map())
@@ -41,14 +45,14 @@ export default function ResultPanel({ tasks, onRemove, onRetry, onRetryAll }: Re
         setPlayingId(taskId)
     }, [playingId])
 
-    const handleDownloadOne = useCallback(async (videoUrl: string, taskId: string) => {
+    const handleDownloadOne = useCallback(async (videoUrl: string, task: Task) => {
         try {
             const res = await fetch(videoUrl)
             const blob = await res.blob()
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `seedance-${taskId.slice(0, 8)}.mp4`
+            a.download = `${task.customName || `seedance-${task.taskId.slice(0, 8)}`}.mp4`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -68,26 +72,35 @@ export default function ResultPanel({ tasks, onRemove, onRetry, onRetryAll }: Re
             const JSZip = (await import('jszip')).default
             const zip = new JSZip()
 
+            let failedDownloads = 0
             for (let i = 0; i < videoTasks.length; i++) {
                 const task = videoTasks[i]
                 setDownloadProgress({ current: i + 1, total: videoTasks.length })
                 try {
                     const res = await fetch(task.videoUrl!)
+                    if (!res.ok) { failedDownloads++; continue }
                     const blob = await res.blob()
-                    const name = `seedance-${task.taskId.slice(0, 8)}-${i + 1}.mp4`
+                    const name = `${task.customName || `seedance-${task.taskId.slice(0, 8)}`}-${i + 1}.mp4`
                     zip.file(name, blob)
-                } catch { /* skip failed downloads */ }
+                } catch { failedDownloads++ }
             }
 
+            if (failedDownloads === videoTasks.length) {
+                alert(t('downloadAllFailed'))
+                return
+            }
             const zipBlob = await zip.generateAsync({ type: 'blob' })
             const url = URL.createObjectURL(zipBlob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `seedance-studio-videos.zip`
+            a.download = `creative-studio-videos.zip`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
             URL.revokeObjectURL(url)
+            if (failedDownloads > 0) {
+                alert(t('downloadPartialFailed', { count: failedDownloads }))
+            }
         } catch { /* ignore */ } finally {
             setIsDownloadingAll(false)
             setDownloadProgress(null)
@@ -176,9 +189,15 @@ export default function ResultPanel({ tasks, onRemove, onRetry, onRetryAll }: Re
                         isPlaying={playingId === task.id}
                         onPlay={() => handlePlay(task.id)}
                         onStop={() => setPlayingId(null)}
-                        onDownload={() => handleDownloadOne(task.videoUrl!, task.taskId)}
+                        onDownload={() => handleDownloadOne(task.videoUrl!, task)}
                         onRemove={() => onRemove(task.id)}
                         onRetry={() => onRetry(task.id)}
+                        isRenaming={renamingTaskId === task.id}
+                        renameValue={renameValue}
+                        onStartRename={() => { setRenamingTaskId(task.id); setRenameValue(task.customName || task.prompt.slice(0, 30)) }}
+                        onRenameChange={setRenameValue}
+                        onSubmitRename={() => { onRename(task.id, renameValue.trim()); setRenamingTaskId(null) }}
+                        onCancelRename={() => setRenamingTaskId(null)}
                         videoRefs={videoRefs}
                         t={t}
                     />
@@ -196,11 +215,17 @@ interface TaskCardProps {
     onDownload: () => void
     onRemove: () => void
     onRetry: () => void
+    isRenaming: boolean
+    renameValue: string
+    onStartRename: () => void
+    onRenameChange: (v: string) => void
+    onSubmitRename: () => void
+    onCancelRename: () => void
     videoRefs: React.MutableRefObject<Map<string, HTMLVideoElement>>
     t: ReturnType<typeof useTranslations>
 }
 
-function TaskCard({ task, isPlaying, onPlay, onStop, onDownload, onRemove, onRetry, videoRefs, t }: TaskCardProps) {
+function TaskCard({ task, isPlaying, onPlay, onStop, onDownload, onRemove, onRetry, isRenaming, renameValue, onStartRename, onRenameChange, onSubmitRename, onCancelRename, videoRefs, t }: TaskCardProps) {
     const statusColor = {
         submitting: 'text-[var(--glass-tone-info-fg)]',
         processing: 'text-[var(--glass-tone-info-fg)]',
@@ -322,10 +347,33 @@ function TaskCard({ task, isPlaying, onPlay, onStop, onDownload, onRemove, onRet
             </div>
 
             {/* Prompt text */}
-            <div className="p-2.5">
-                <p className="text-xs text-[var(--glass-text-secondary)] line-clamp-2">
-                    {task.prompt || '...'}
-                </p>
+            <div className="p-2.5 group/name">
+                {isRenaming ? (
+                    <input
+                        type="text"
+                        value={renameValue}
+                        onChange={e => onRenameChange(e.target.value)}
+                        className="w-full px-1.5 py-0.5 text-xs rounded border border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface)] text-[var(--glass-text-primary)] focus:outline-none focus:border-[var(--glass-tone-info-fg)]"
+                        autoFocus
+                        onBlur={onSubmitRename}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.nativeEvent.isComposing) onSubmitRename()
+                            if (e.key === 'Escape') onCancelRename()
+                        }}
+                    />
+                ) : (
+                    <div className="flex items-center gap-1">
+                        <p className="text-xs text-[var(--glass-text-secondary)] line-clamp-2 flex-1">
+                            {task.customName || task.prompt || '...'}
+                        </p>
+                        <button
+                            onClick={onStartRename}
+                            className="opacity-0 group-hover/name:opacity-100 shrink-0 text-[var(--glass-text-tertiary)] hover:text-[var(--glass-text-secondary)] transition-all"
+                        >
+                            <AppIcon name="edit" className="w-3 h-3" />
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -1,13 +1,13 @@
 'use client'
 
 import Navbar from '@/components/Navbar'
-import SeedanceStudioWorkspace from './SeedanceStudioWorkspace'
+import CreativeStudioWorkspace from './CreativeStudioWorkspace'
 
-export default function SeedanceStudioPage() {
+export default function CreativeStudioPage() {
     return (
         <div className="glass-page min-h-screen">
             <Navbar />
-            <SeedanceStudioWorkspace />
+            <CreativeStudioWorkspace />
         </div>
     )
 }

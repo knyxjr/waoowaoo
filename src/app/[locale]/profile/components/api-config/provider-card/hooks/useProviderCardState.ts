@@ -451,48 +451,9 @@ export function useProviderCardState({
     setKeyTestSteps([])
   }, [onUpdateApiKey, provider.id, tempKey])
 
-  const handleSaveKey = useCallback(async () => {
-    if (!VERIFIABLE_PROVIDER_KEYS.has(providerKey)) {
-      doSaveKey()
-      return
-    }
-
-    setKeyTestStatus('testing')
-    setKeyTestSteps([])
-
-    try {
-      const fallbackLlmModel = pickConfiguredLlmModel({
-        models,
-        defaultAnalysisModel: defaultModels.analysisModel,
-      })
-      const payload = buildProviderConnectionPayload({
-        providerKey,
-        apiKey: tempKey,
-        baseUrl: provider.baseUrl,
-        llmModel: fallbackLlmModel,
-      })
-      const res = await apiFetch('/api/user/api-config/test-provider', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await res.json()
-      const steps: KeyTestStep[] = data.steps || []
-      setKeyTestSteps(steps)
-
-      if (data.success) {
-        setKeyTestStatus('passed')
-        // Show success for 1.5s before saving
-        setTimeout(() => doSaveKey(), 1500)
-      } else {
-        setKeyTestStatus('failed')
-      }
-    } catch {
-      setKeyTestSteps([{ name: 'models', status: 'fail', message: 'Network error' }])
-      setKeyTestStatus('failed')
-    }
-  }, [defaultModels.analysisModel, doSaveKey, models, provider.baseUrl, providerKey, tempKey])
+  const handleSaveKey = useCallback(() => {
+    doSaveKey()
+  }, [doSaveKey])
 
   const handleForceSaveKey = useCallback(() => {
     doSaveKey()

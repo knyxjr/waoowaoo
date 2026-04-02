@@ -81,6 +81,8 @@
     "downloadAll": "Download All",
     "downloading": "Packaging...",
     "downloadProgress": "Downloading {current}/{total}",
+    "downloadAllFailed": "All videos failed to download. Please check your network or if links have expired.",
+    "downloadPartialFailed": "{count} video(s) failed to download",
     "noVideos": "No videos to download",
     "status": {
       "submitting": "Submitting",

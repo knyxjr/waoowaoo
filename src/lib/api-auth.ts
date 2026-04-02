@@ -177,12 +177,32 @@ export async function getAuthSession(): Promise<AuthSession | null> {
     return session as AuthSession | null
 }
 
+async function getPersistedAuthSession(): Promise<AuthSession | null> {
+    const session = await getAuthSession()
+    if (!session?.user?.id) {
+        return null
+    }
+
+    const user = await withPrismaRetry(() =>
+        prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true },
+        })
+    )
+
+    if (!user) {
+        return null
+    }
+
+    return session
+}
+
 /**
  * 要求用户登录
  * @throws 返回 401 响应
  */
 export async function requireAuth(): Promise<AuthSession> {
-    const session = await getAuthSession()
+    const session = await getPersistedAuthSession()
     if (!session?.user?.id) {
         throw { response: unauthorized() }
     }
@@ -216,7 +236,7 @@ export async function requireProjectAuth<T extends ProjectAuthIncludes = Project
     options?: { include?: T }
 ): Promise<ProjectAuthContextWithIncludes<T> | NextResponse> {
     // 1. 验证 Session
-    const session = await getAuthSession()
+    const session = await getPersistedAuthSession()
     if (!session?.user?.id) {
         return unauthorized()
     }
@@ -304,7 +324,7 @@ export async function requireProjectAuth<T extends ProjectAuthIncludes = Project
  * ```
  */
 export async function requireUserAuth(): Promise<{ session: AuthSession } | NextResponse> {
-    const session = await getAuthSession()
+    const session = await getPersistedAuthSession()
     if (!session?.user?.id) {
         return unauthorized()
     }
@@ -319,7 +339,7 @@ export async function requireUserAuth(): Promise<{ session: AuthSession } | Next
 export async function requireProjectAuthLight(
     projectId: string
 ): Promise<{ session: AuthSession; project: { id: string; userId: string; name: string; [key: string]: unknown } } | NextResponse> {
-    const session = await getAuthSession()
+    const session = await getPersistedAuthSession()
     if (!session?.user?.id) {
         return unauthorized()
     }

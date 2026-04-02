@@ -13,12 +13,12 @@ type RequestBody = {
   context?: unknown
 }
 
-function readAssistantId(value: unknown): 'api-config-template' | 'tutorial' {
+function readAssistantId(value: unknown): 'api-config-template' | 'tutorial' | 'creative-studio' {
   if (!isAssistantId(value)) {
     throw new ApiError('INVALID_PARAMS', {
       code: 'ASSISTANT_INVALID_REQUEST',
       field: 'assistantId',
-      message: 'assistantId must be api-config-template or tutorial',
+      message: 'assistantId must be api-config-template, tutorial, or creative-studio',
     })
   }
   return value

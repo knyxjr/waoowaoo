@@ -207,7 +207,13 @@ export class GeminiCompatibleImageGenerator extends BaseImageGenerator {
 
     const parts: GeminiCompatibleContentPart[] = []
     for (const referenceImage of referenceImages.slice(0, 14)) {
-      const inlineData = await toInlineData(referenceImage)
+      let inlineData: { mimeType: string; data: string } | null
+      try {
+        inlineData = await toInlineData(referenceImage)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        throw new Error(`GEMINI_COMPATIBLE_REFERENCE_FETCH_FAILED: 无法获取参考图片 (${msg})`)
+      }
       if (!inlineData) throw new Error('GEMINI_COMPATIBLE_REFERENCE_INVALID: failed to parse reference image')
       parts.push({ inlineData })
     }
@@ -216,8 +222,13 @@ export class GeminiCompatibleImageGenerator extends BaseImageGenerator {
     const requestBody = {
       contents: [{ parts }],
       generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        ...(normalizedOptions.aspectRatio ? { aspectRatio: normalizedOptions.aspectRatio } : {}),
+        responseModalities: ['IMAGE'],
+        ...(normalizedOptions.aspectRatio || normalizedOptions.resolution ? {
+          imageConfig: {
+            ...(normalizedOptions.aspectRatio ? { aspectRatio: normalizedOptions.aspectRatio } : {}),
+            ...(normalizedOptions.resolution ? { image_size: normalizedOptions.resolution } : {}),
+          },
+        } : {}),
       },
       safetySettings: [
         { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -228,15 +239,21 @@ export class GeminiCompatibleImageGenerator extends BaseImageGenerator {
     }
 
     console.log(`[GEMINI_NATIVE] 尝试原生 Endpoint: ${apiPath}`)
-    const gRes = await fetch(apiPath, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': providerConfig.apiKey,
-        'Authorization': `Bearer ${providerConfig.apiKey}`, 
-      },
-      body: JSON.stringify(requestBody),
-    })
+    let gRes: Response
+    try {
+      gRes = await fetch(apiPath, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': providerConfig.apiKey,
+          'Authorization': `Bearer ${providerConfig.apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      throw new Error(`GEMINI_COMPATIBLE_API_UNREACHABLE: 无法连接到 ${apiPath.split('/models')[0]} (${msg})`)
+    }
     
     const gText = await gRes.text()
     

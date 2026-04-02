@@ -119,8 +119,29 @@ export function useMediaUpload({ maxFiles, accept, maxSizeMB = 50 }: UseMediaUpl
         setFiles([])
     }, [files])
 
+    const addFromUrl = useCallback(async (url: string, filename: string) => {
+        const remaining = maxFiles - files.length
+        if (remaining <= 0) return
+        const id = crypto.randomUUID()
+        try {
+            const res = await fetch(url)
+            const blob = await res.blob()
+            const file = new File([blob], filename, { type: blob.type || 'image/png' })
+            const previewUrl = URL.createObjectURL(blob)
+            setFiles(prev => [...prev, { id, file, previewUrl, uploading: true }])
+            const key = await upload(file)
+            setFiles(prev => prev.map(f =>
+                f.id === id ? { ...f, uploading: false, cosKey: key ?? undefined } : f
+            ))
+        } catch (err) {
+            setFiles(prev => prev.map(f =>
+                f.id === id ? { ...f, uploading: false, error: String(err) } : f
+            ))
+        }
+    }, [files.length, maxFiles, upload])
+
     const readyKeys = files.filter(f => f.cosKey && !f.error).map(f => f.cosKey!)
     const isUploading = files.some(f => f.uploading)
 
-    return { files, addFiles, removeFile, triggerPicker, clear, readyKeys, isUploading }
+    return { files, addFiles, removeFile, triggerPicker, clear, addFromUrl, readyKeys, isUploading }
 }

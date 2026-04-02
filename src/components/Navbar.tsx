@@ -117,11 +117,11 @@ export default function Navbar() {
                     {t('assetHub')}
                   </Link>
                   <Link
-                    href={{ pathname: '/workspace/seedance-studio' }}
+                    href={{ pathname: '/workspace/creative-studio' }}
                     className="text-sm text-[var(--glass-text-secondary)] hover:text-[var(--glass-text-primary)] font-medium transition-colors flex items-center gap-1"
                   >
-                    <AppIcon name="film" className="w-4 h-4" />
-                    {t('seedanceStudio')}
+                    <AppIcon name="sparklesAlt" className="w-4 h-4" />
+                    {t('creativeStudio')}
                   </Link>
                   <Link
                     href={{ pathname: '/profile' }}

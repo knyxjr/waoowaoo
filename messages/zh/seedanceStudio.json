@@ -81,6 +81,8 @@
     "downloadAll": "下载全部",
     "downloading": "打包下载中...",
     "downloadProgress": "下载中 {current}/{total}",
+    "downloadAllFailed": "所有视频下载失败，请检查网络或链接是否过期",
+    "downloadPartialFailed": "{count} 个视频下载失败",
     "noVideos": "暂无可下载的视频",
     "status": {
       "submitting": "提交中",

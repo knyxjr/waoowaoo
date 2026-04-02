@@ -18,9 +18,13 @@ function normalizeAssistantContext(raw: unknown): AssistantContext {
   const record = raw as Record<string, unknown>
   const providerId = typeof record.providerId === 'string' ? record.providerId.trim() : ''
   const locale = typeof record.locale === 'string' ? record.locale.trim() : ''
+  const modelKey = typeof record.modelKey === 'string' ? record.modelKey.trim() : ''
+  const customSystemPrompt = typeof record.customSystemPrompt === 'string' ? record.customSystemPrompt.trim() : ''
   return {
     ...(providerId ? { providerId } : {}),
     ...(locale ? { locale } : {}),
+    ...(modelKey ? { modelKey } : {}),
+    ...(customSystemPrompt ? { customSystemPrompt } : {}),
   }
 }
 
@@ -91,12 +95,12 @@ export async function createAssistantChatResponse(input: {
   }
 
   const userConfig = await getUserModelConfig(input.userId)
-  const analysisModelKey = userConfig.analysisModel?.trim() || ''
+  const context = normalizeAssistantContext(input.context)
+  const analysisModelKey = context.modelKey || userConfig.analysisModel?.trim() || ''
   if (!analysisModelKey) {
     throw new AssistantPlatformError('ASSISTANT_MODEL_NOT_CONFIGURED', 'analysisModel is required')
   }
 
-  const context = normalizeAssistantContext(input.context)
   const skill = getAssistantSkill(input.assistantId)
   const resolved = await resolveAssistantLanguageModel({
     userId: input.userId,
@@ -112,9 +116,11 @@ export async function createAssistantChatResponse(input: {
 
   const tools = skill.tools ? skill.tools(runtimeContext) : undefined
 
+  const systemPrompt = context.customSystemPrompt || skill.systemPrompt(runtimeContext)
+
   const result = streamText({
     model: resolved.languageModel,
-    system: skill.systemPrompt(runtimeContext),
+    system: systemPrompt,
     messages: await toModelMessages(normalizedMessages),
     ...(tools ? { tools } : {}),
     stopWhen: stepCountIs(skill.maxSteps ?? 4),

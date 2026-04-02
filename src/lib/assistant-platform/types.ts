@@ -1,11 +1,13 @@
 import type { ToolSet } from 'ai'
 import type { OpenAICompatMediaTemplate } from '@/lib/openai-compat-media-template'
 
-export type AssistantId = 'api-config-template' | 'tutorial'
+export type AssistantId = 'api-config-template' | 'tutorial' | 'creative-studio'
 
 export interface AssistantContext {
   providerId?: string
   locale?: string
+  modelKey?: string
+  customSystemPrompt?: string
 }
 
 export interface AssistantResolvedModel {
